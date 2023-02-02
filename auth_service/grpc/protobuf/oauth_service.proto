@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+service GoogleOAuth {
+    rpc GetProviderLoginURL (GetProviderLoginURLRequest) returns (GetProviderLoginURLResponse);
+    rpc Login (OAuthLoginRequest) returns (OAuthLoginResponse);
+    rpc AttachAccountToUser (AttachAccountToUserRequest) returns (AttachAccountToUserResponse);
+    rpc DetachAccountFromUser (DetachAccountFromUserRequest) returns (DetachAccountFromUserResponse);
+}
+
+service YandexOAuth {
+    rpc GetProviderLoginURL (GetProviderLoginURLRequest) returns (GetProviderLoginURLResponse);
+    rpc Login (OAuthLoginRequest) returns (OAuthLoginResponse);
+    rpc AttachAccountToUser (AttachAccountToUserRequest) returns (AttachAccountToUserResponse);
+    rpc DetachAccountFromUser (DetachAccountFromUserRequest) returns (DetachAccountFromUserResponse);
+}
+
+message GetProviderLoginURLRequest {
+    string callback_url = 1;
+    optional string access_token = 2;
+}
+
+message GetProviderLoginURLResponse {
+    string url = 1;
+    string state_token = 2;
+}
+
+message OAuthLoginRequest {
+    string code = 1;
+    string state_token = 2;
+}
+
+message OAuthLoginResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    uint32 expires_in = 3;
+    string token_type = 4;
+}
+
+message AttachAccountToUserRequest {
+    string access_token = 1;
+    string code = 2;
+    string state_token = 3;
+}
+
+message AttachAccountToUserResponse {}
+
+message DetachAccountFromUserRequest {
+    string access_token = 1;
+}
+
+message DetachAccountFromUserResponse {}

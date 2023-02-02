@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+service Auth {
+    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
+    rpc Logout (LogoutRequest) returns (LogoutResponse);
+    rpc LogoutOther (LogoutOtherRequest) returns (LogoutOtherResponse);
+    rpc UpdatePassword (UpdateUserPasswordRequest) returns (UpdateUserPasswordResponse);
+    rpc UpdateEmail (UpdateUserEmailRequest) returns (UpdateUserEmailResponse);
+    rpc CheckToken (CheckTokenRequest) returns (CheckTokenResponse);
+}
+
+
+message LoginRequest {
+    string login = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    uint32 expires_in = 3;
+    string token_type = 4;
+}
+
+message RefreshTokenRequest {
+    string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+    string access_token = 1;
+    string refresh_token = 2;
+    uint32 expires_in = 3;
+    string token_type = 4;
+}
+
+message LogoutRequest {
+    string access_token = 1;
+}
+
+message LogoutResponse {}
+
+message LogoutOtherRequest {
+    string access_token = 1;
+}
+
+message LogoutOtherResponse {}
+
+message UpdateUserPasswordRequest {
+    string access_token = 1;
+    string password = 2;
+}
+
+message UpdateUserPasswordResponse {}
+
+message UpdateUserEmailRequest {
+    string access_token = 1;
+    string email = 2;
+}
+
+message UpdateUserEmailResponse {}
+
+
+message CheckTokenRequest {
+    string access_token = 1;
+}
+
+message CheckTokenResponse {
+    bool success = 1;
+}

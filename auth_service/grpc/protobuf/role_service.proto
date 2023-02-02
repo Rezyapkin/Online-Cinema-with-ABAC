@@ -1,0 +1,213 @@
+// RoleService include UserList (as real admin service)
+syntax = "proto3";
+
+service AdminRole {
+    rpc GetUser (GetUserRequest) returns (GetUserResponse);
+    rpc GetUserList (GetUserListRequest) returns (GetUserListResponse);
+    rpc CreatePolicy (CreatePolicyRequest) returns (CreatePolicyResponse);
+    rpc UpdatePolicy (UpdatePolicyRequest) returns (UpdatePolicyResponse);
+    rpc DeletePolicy (DeletePolicyRequest) returns (DeletePolicyResponse);
+    rpc GetPolicy (GetPolicyRequest) returns (GetPolicyResponse);
+    rpc GetPolicyList (GetPolicyListRequest) returns (GetPolicyListResponse);
+    rpc CheckAccess (CheckAccessRequest) returns (CheckAccessResponse);
+}
+
+message GetUserRequest {
+    string access_token = 1;
+    string id = 2;
+}
+
+message AnyUserOAuthProviderAccount {
+    string provider = 1;
+    string account_id = 2;
+}
+
+message GetUserResponse {
+    string id = 1;
+    string email = 2;
+    bool is_active = 3;
+    bool is_superuser = 4;
+    repeated AnyUserOAuthProviderAccount oauth_accounts = 5;
+}
+
+message GetUserListRequest {
+    string access_token = 1;
+    uint32 page_number = 2;
+    uint32 page_size = 3;
+}
+
+message UserInList {
+    // don't use GetUserResponse, will have more data in future and their will be no need to display it in list
+    string id = 1;
+    string email = 2;
+    bool is_active = 3;
+    bool is_superuser = 4;
+}
+message GetUserListResponse {
+    repeated UserInList results = 1;
+    uint32 total_count = 2;
+    uint32 total_pages = 3;
+    optional uint32 prev_page = 4;
+    optional uint32 next_page = 5;
+}
+
+message CreatePolicyRequest {
+    // Raw policy looks like. Description is unique! json -> str -> json
+    // {
+    //  "effect": "allow",
+    //  "subjects": [
+    //    {
+    //      "name": {
+    //        "rule_type": "RuleAny"
+    //      },
+    //      "stars": {
+    //        "rule_type": "And",
+    //        "rules": [
+    //          {
+    //            "rule_type": "Greater",
+    //            "value": 50
+    //          },
+    //          {
+    //            "rule_type": "Less",
+    //            "value": 999
+    //          }
+    //        ]
+    //      }
+    //    }
+    //  ],
+    //  "resources": [
+    //    {
+    //      "repo": {
+    //        "rule_type": "StrStartsWith",
+    //        "value": "repos/Google",
+    //        "case_sensitive": true
+    //      }
+    //    }
+    //  ],
+    //  "actions": [
+    //    {
+    //      "rule_type": "Eq",
+    //      "value": "fork"
+    //    },
+    //    {
+    //      "rule_type": "Eq",
+    //      "value": "clone"
+    //    }
+    //  ],
+    //  "context": {
+    //    "referer": {
+    //      "rule_type": "Eq",
+    //      "value": "https://github.com"
+    //    }
+    //  },
+    //  "description": "Allow to fork or clone any Google repository for users that have > 50 and < 999 stars and came from Github"
+    //}
+    string access_token = 1;
+    string policy = 2;
+}
+message CreatePolicyResponse {
+    string id = 1;
+}
+
+message UpdatePolicyRequest {
+    // Raw policy looks like. Description is unique! json -> str -> jso
+    // {
+    //  "effect": "allow",
+    //  "subjects": [
+    //    {
+    //      "name": {
+    //        "rule_type": "RuleAny"
+    //      },
+    //      "stars": {
+    //        "rule_type": "And",
+    //        "rules": [
+    //          {
+    //            "rule_type": "Greater",
+    //            "value": 50
+    //          },
+    //          {
+    //            "rule_type": "Less",
+    //            "value": 999
+    //          }
+    //        ]
+    //      }
+    //    }
+    //  ],
+    //  "resources": [
+    //    {
+    //      "repo": {
+    //        "rule_type": "StrStartsWith",
+    //        "value": "repos/Google",
+    //        "case_sensitive": true
+    //      }
+    //    }
+    //  ],
+    //  "actions": [
+    //    {
+    //      "rule_type": "Eq",
+    //      "value": "fork"
+    //    },
+    //    {
+    //      "rule_type": "Eq",
+    //      "value": "clone"
+    //    }
+    //  ],
+    //  "context": {
+    //    "referer": {
+    //      "rule_type": "Eq",
+    //      "value": "https://github.com"
+    //    }
+    //  },
+    //  "description": "Allow to fork or clone any Google repository for users that have > 50 and < 999 stars and came from Github"
+    //}
+    string access_token = 1;
+    string id = 2;
+    string policy = 3;
+}
+message UpdatePolicyResponse {}
+
+message DeletePolicyRequest {
+    string access_token = 1;
+    string id = 2;
+}
+message DeletePolicyResponse {}
+
+message GetPolicyRequest {
+    string access_token = 1;
+    string id = 2;
+}
+message GetPolicyResponse {
+    string policy = 1;
+}
+
+message GetPolicyListRequest {
+    string access_token = 1;
+    uint32 page_number = 2;
+    uint32 page_size = 3;
+}
+
+message GetPolicyListResponse {
+    repeated string policy = 1;
+    uint32 total_count = 2;
+    uint32 total_pages = 3;
+    optional uint32 prev_page = 4;
+    optional uint32 next_page = 5;
+}
+
+message CheckAccessRequest {
+    // inquiry looks like (json -> str)
+    // Inquiry(
+    //     subject={'login': request.form['username'], 'role': request.form['user_role']},
+    //     action=request.form['action'],
+    //     resource={'book': session.get('book'), 'chapter': request.form['chapter']},
+    //     context={'ip': request.remote_addr}
+    // )
+    // Client must pass in `inquiry` field: `action` (CONSTANT from auth package) and `resource` (route + extra args (e.g. some filters)).
+    // Backend will assemble subject from `access_token` and context from metadata.
+    string access_token = 1;
+    string inquiry = 2;
+}
+
+message CheckAccessResponse {
+    bool has_access = 1;
+}

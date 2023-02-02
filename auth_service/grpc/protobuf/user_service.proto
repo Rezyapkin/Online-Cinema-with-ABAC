@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+service User {
+    rpc Create (CreateUserRequest) returns (CreateUserResponse);
+    rpc GetLoginHistory (GetUserLoginHistoryRequest) returns (GetUserLoginHistoryResponse);
+    rpc GetUserMe (GetUserMeRequest) returns (GetUserMeResponse);
+}
+
+message CreateUserRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message CreateUserResponse {
+    string id = 1;
+    string email = 2;
+}
+
+message GetUserLoginHistoryRequest {
+    string access_token = 1;
+    uint32 page_number = 2;
+    uint32 page_size = 3;
+}
+
+message UserLoginHistory {
+    string date = 1;
+    string ip_address = 2;
+    string user_agent = 3;
+    string device = 4;
+}
+
+message GetUserLoginHistoryResponse {
+     repeated UserLoginHistory results = 1;
+     uint32 total_count = 2;
+     uint32 total_pages = 3;
+     optional uint32 prev_page = 4;
+     optional uint32 next_page = 5;
+}
+
+message GetUserMeRequest {
+    string access_token = 1;
+}
+
+message UserOAuthProviderAccount {
+    string provider = 1;
+    string account_id = 2;
+}
+
+message GetUserMeResponse {
+    string email = 1;
+    repeated UserOAuthProviderAccount oauth_accounts = 2;
+}
