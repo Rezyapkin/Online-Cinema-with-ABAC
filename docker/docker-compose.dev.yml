@@ -1,0 +1,33 @@
+version: '3.9'
+services:
+  django_admin_app:
+    volumes:
+      - ../django_admin/server:/opt/app/server
+    environment:
+      - ADMIN_PANEL_DEBUG=True
+  postgres_to_es_app:
+    volumes:
+      - ../postgres_to_es/postgres_to_es:/opt/app/postgres_to_es
+  postgres_to_es_redis:
+    ports:
+      - ${ETL_MOVIES_REDIS_PORT}:${ETL_MOVIES_REDIS_PORT}
+  fastapi_api_redis:
+    ports:
+      - ${FASTAPI_API_REDIS_PORT}:${FASTAPI_API_REDIS_PORT}
+  fastapi_api_app:
+    volumes:
+      - ../fastapi_api/src:/opt/app/src
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --app-dir ./src --proxy-headers --reload
+  auth_redis:
+    ports:
+      - ${AUTH_GRPC_REDIS_PORT}:${AUTH_GRPC_REDIS_PORT}
+  auth_grpc_app:
+    command: watchmedo auto-restart --recursive --pattern="*.py" --directory="/opt/app/src" python3.10 -- /opt/app/src/main.py --port 50051
+    volumes:
+      - ../auth_service/grpc/src:/opt/app/src
+    ports:
+      - "50051:50051"
+  auth_api_app:
+    command: gunicorn wsgi:app -w 4 --worker-class gevent --chdir ./src --bind 0.0.0.0:5000 --forwarded-allow-ips="*" --reload
+    volumes:
+      - ../auth_service/api/src:/opt/app/src

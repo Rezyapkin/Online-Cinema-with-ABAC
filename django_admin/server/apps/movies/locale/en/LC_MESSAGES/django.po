@@ -1,0 +1,157 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-11-22 18:38+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: server/apps/movies/apps.py:8
+msgid "movies"
+msgstr "Movies"
+
+#: server/apps/movies/models/film_work.py:10
+msgid "movie"
+msgstr "Movie"
+
+#: server/apps/movies/models/film_work.py:11
+msgid "tv_show"
+msgstr "TV-show"
+
+#: server/apps/movies/models/film_work.py:15
+msgid "G"
+msgstr "General Audiences"
+
+#: server/apps/movies/models/film_work.py:16
+msgid "PG"
+msgstr "Parental Guidance Suggested"
+
+#: server/apps/movies/models/film_work.py:17
+msgid "PG-13"
+msgstr "Parents Strongly Cautioned"
+
+#: server/apps/movies/models/film_work.py:18
+msgid "R"
+msgstr "Restricted"
+
+#: server/apps/movies/models/film_work.py:19
+msgid "NC-17"
+msgstr "Adults Only"
+
+#: server/apps/movies/models/film_work.py:23
+msgid "title"
+msgstr "Title"
+
+#: server/apps/movies/models/film_work.py:24
+#: server/apps/movies/models/genre.py:9
+msgid "description"
+msgstr "Description"
+
+#: server/apps/movies/models/film_work.py:25
+msgid "creation_date"
+msgstr "Creation date"
+
+#: server/apps/movies/models/film_work.py:27
+msgid "rating"
+msgstr "Rating"
+
+#: server/apps/movies/models/film_work.py:29
+msgid "type"
+msgstr "Type"
+
+#: server/apps/movies/models/film_work.py:30
+msgid "certificate"
+msgstr "License certificate"
+
+#: server/apps/movies/models/film_work.py:31
+msgid "file"
+msgstr "Filmwork file"
+
+#: server/apps/movies/models/film_work.py:32
+msgid "age_limit"
+msgstr "Motion picture content rating system"
+
+#: server/apps/movies/models/film_work.py:47
+#: server/apps/movies/models/genre_film_work.py:10
+#: server/apps/movies/models/person_film_work.py:17
+msgid "Filmwork"
+msgstr "Filmwork"
+
+#: server/apps/movies/models/film_work.py:48
+#, fuzzy
+#| msgid "Filmwork"
+msgid "Filmworks"
+msgstr "Filmwork"
+
+#: server/apps/movies/models/genre.py:8
+msgid "name"
+msgstr "Name"
+
+#: server/apps/movies/models/genre.py:19
+#: server/apps/movies/models/genre_film_work.py:9
+msgid "Genre"
+msgstr "Genre"
+
+#: server/apps/movies/models/genre.py:20
+msgid "Genres"
+msgstr "Genres"
+
+#: server/apps/movies/models/genre_film_work.py:18
+msgid "Filmwork genre"
+msgstr "Filmwork genre"
+
+#: server/apps/movies/models/genre_film_work.py:19
+msgid "Filmwork genres"
+msgstr "Filmwork genre"
+
+#: server/apps/movies/models/person.py:8
+msgid "full_name"
+msgstr "Full name"
+
+#: server/apps/movies/models/person.py:18
+#: server/apps/movies/models/person_film_work.py:16
+msgid "Person"
+msgstr "Person"
+
+#: server/apps/movies/models/person.py:19
+msgid "Persons"
+msgstr "Persons"
+
+#: server/apps/movies/models/person_film_work.py:9
+msgid "actor"
+msgstr "Actor"
+
+#: server/apps/movies/models/person_film_work.py:10
+msgid "writer"
+msgstr "Writer"
+
+#: server/apps/movies/models/person_film_work.py:11
+msgid "director"
+msgstr "Director"
+
+#: server/apps/movies/models/person_film_work.py:18
+msgid "role"
+msgstr "Role"
+
+#: server/apps/movies/models/person_film_work.py:26
+msgid "Filmwork person"
+msgstr "Filmwork person"
+
+#: server/apps/movies/models/person_film_work.py:27
+msgid "Filmwork persons"
+msgstr "Filmwork persons"
+
+#~ msgid "Fireworks"
+#~ msgstr "Fireworks"

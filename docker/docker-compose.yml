@@ -1,0 +1,258 @@
+version: '3.9'
+services:
+  django_admin_app:
+    container_name: django_admin_app
+    restart: always
+    build:
+      context: ./../django_admin
+      dockerfile: ./docker/app/Dockerfile
+    labels:
+      service.description: "Admin movies panel"
+      service.label: "django_admin"
+    volumes:
+      - django_admin_static:/opt/app/static
+      - django_admin_media:/opt/app/media
+    depends_on:
+        django_admin_postgres:
+          condition: service_healthy
+  django_admin_postgres:
+    container_name: django_admin_postgres
+    restart: always
+    build:
+      context: ./../django_admin
+      dockerfile: ./docker/postgres/Dockerfile
+    command: -p ${ADMIN_PANEL_POSTGRES_PORT}
+    labels:
+      service.description: "Data storage for admin movies panel"
+      service.label: "django_admin"
+    volumes:
+      - django_admin_pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${ADMIN_PANEL_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${ADMIN_PANEL_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${ADMIN_PANEL_POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${ADMIN_PANEL_POSTGRES_USER} -d ${ADMIN_PANEL_POSTGRES_DB} -p ${ADMIN_PANEL_POSTGRES_PORT}'"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    ports:
+      - ${ADMIN_PANEL_POSTGRES_PORT}:${ADMIN_PANEL_POSTGRES_PORT}
+
+  postgres_to_es_app:
+    container_name: postgres_to_es_app
+    restart: always
+    build:
+      context: ./../postgres_to_es
+      dockerfile: ./docker/app/Dockerfile
+    labels:
+      service.description: "ETL from admin panel for RO movies API"
+      service.label: "postgres_to_es"
+    depends_on:
+      django_admin_postgres:
+        condition: service_healthy
+      postgres_to_es_redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+  postgres_to_es_redis:
+    container_name: postgres_to_es_redis
+    restart: always
+    build:
+      context: ./..  # use base redis Dockerfile
+      dockerfile: ./docker/redis/Dockerfile
+    command: sh -c "redis-server --save 20 1 --loglevel warning --port ${ETL_MOVIES_REDIS_PORT} --user ${ETL_MOVIES_REDIS_USER} on '>${ETL_MOVIES_REDIS_PASSWORD}' '~*' '&*' '+@all' --requirepass ${ETL_MOVIES_REDIS_PASSWORD}"
+    labels:
+      service.description: "State saver for ETL"
+      service.label: "postgres_to_es"
+    volumes:
+      - postgres_to_es_redis_cache:/data
+    expose:
+      - ${ETL_MOVIES_REDIS_PORT}
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli", "-p", "$ETL_MOVIES_REDIS_PORT", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 1s
+      retries: 10
+
+  fastapi_api_app:
+    container_name: fastapi_api_app
+    restart: always
+    build:
+      context: ./../fastapi_api
+      dockerfile: ./docker/app/Dockerfile
+    labels:
+      service.description: "RO movies API"
+      service.label: "fastapi_api,auth_service"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      fastapi_api_redis:
+        condition: service_healthy
+  fastapi_api_redis:
+    container_name: fastapi_api_redis
+    restart: always
+    build:
+      context: ./..  # use base redis Dockerfile
+      dockerfile: ./docker/redis/Dockerfile
+    command: sh -c "redis-server --save 20 1 --loglevel warning --port ${FASTAPI_API_REDIS_PORT} --user ${FASTAPI_API_REDIS_USER} on '>${FASTAPI_API_REDIS_PASSWORD}' '~*' '&*' '+@all' --requirepass ${FASTAPI_API_REDIS_PASSWORD}"
+    labels:
+      service.description: "Cache for RO movies API"
+      service.label: "fastapi_api"
+    volumes:
+      - fastapi_api_redis_cache:/data
+    expose:
+      - ${FASTAPI_API_REDIS_PORT}
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli", "-p", "$FASTAPI_API_REDIS_PORT", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 1s
+      retries: 10
+
+  auth_grpc_app:
+    container_name: auth_grpc_app
+    restart: always
+    build:
+      context: ./../auth_service/grpc
+      dockerfile: ./docker/app/Dockerfile
+    labels:
+      service.description: "Auth grpc service"
+      service.label: "auth_service"
+    depends_on:
+      auth_postgres:
+        condition: service_healthy
+      auth_redis:
+        condition: service_healthy
+  auth_postgres:
+    container_name: auth_postgres
+    restart: always
+    build:
+      context: ./../auth_service/grpc
+      dockerfile: ./docker/postgres/Dockerfile
+    command: -p ${AUTH_GRPC_POSTGRES_PORT}
+    labels:
+      service.description: "Data storage for users in auth service"
+      service.label: "auth_service"
+    volumes:
+      - auth_pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${AUTH_GRPC_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AUTH_GRPC_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${AUTH_GRPC_POSTGRES_DB}
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${AUTH_GRPC_POSTGRES_USER} -d ${AUTH_GRPC_POSTGRES_DB} -p ${AUTH_GRPC_POSTGRES_PORT}'" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    ports:
+      - ${AUTH_GRPC_POSTGRES_PORT}:${AUTH_GRPC_POSTGRES_PORT}
+  auth_redis:
+    container_name: auth_redis
+    restart: always
+    build:
+      context: ./..  # use base redis Dockerfile
+      dockerfile: ./docker/redis/Dockerfile
+    command: sh -c "redis-server --save 20 1 --loglevel warning --port ${AUTH_GRPC_REDIS_PORT} --user ${AUTH_GRPC_REDIS_USER} on '>${AUTH_GRPC_REDIS_PASSWORD}' '~*' '&*' '+@all' --requirepass ${AUTH_GRPC_REDIS_PASSWORD}"
+    labels:
+      service.description: "Cache for auth service"
+      service.label: "auth_service"
+    volumes:
+      - auth_redis_cache:/data
+    expose:
+      - ${AUTH_GRPC_REDIS_PORT}
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli", "-p", "$AUTH_GRPC_REDIS_PORT", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 1s
+      retries: 10
+  auth_api_app:
+    container_name: auth_api_app
+    restart: always
+    build:
+      context: ./../auth_service/api
+      dockerfile: ./docker/Dockerfile
+    labels:
+      service.description: "Auth API service"
+      service.label: "auth_service"
+    depends_on:
+      - auth_grpc_app
+
+
+  nginx:
+    container_name: nginx
+    restart: always
+    build:
+      context: ./..
+      dockerfile: ./docker/nginx/Dockerfile
+    labels:
+      service.description: "Reverse proxy: nginx"
+      service.label: "django_admin,fastapi_api,auth_service"
+    volumes:
+      - django_admin_static:/opt/app/static:ro
+      - django_admin_media:/opt/app/media:ro
+    depends_on:
+      - django_admin_app
+      - fastapi_api_app
+      - auth_api_app
+    ports:
+      - "80:80"
+      - "8000:8000"
+      - "5000:5000"
+  elasticsearch:
+    container_name: elasticsearch
+    restart: always
+    build:
+      context: ./..
+      dockerfile: ./docker/elasticsearch/Dockerfile
+    labels:
+      service.description: "Elastic for RO movies API"
+      service.label: "postgres_to_es,fastapi_api"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    environment:
+      ES_JAVA_OPTS: "-Xms2048m -Xmx2048m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+  kibana:
+    container_name: kibana
+    restart: always
+    image: kibana:8.5.1
+    labels:
+      service.description: "Kibana for RO movies API elasticsearch"
+      service.label: "postgres_to_es,fastapi_api"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "5601:5601"
+  jaeger:
+    container_name: jaeger
+    restart: always
+    image: jaegertracing/all-in-one:1.41.0
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+
+volumes:
+  django_admin_static:
+  django_admin_media:
+  django_admin_pgdata:
+  postgres_to_es_redis_cache:
+  fastapi_api_redis_cache:
+  elasticsearch_data:
+  auth_pgdata:
+  auth_redis_cache:

@@ -1,0 +1,81 @@
+version: '3.9'
+
+services:
+  auth_grpc_app:
+    container_name: test_auth_grpc_app
+    restart: always
+    build:
+      context: ./../auth_service/grpc
+      dockerfile: ./docker/app/Dockerfile
+    command: sh -c "make alembic-migrate && python3.10 /opt/app/src/main.py --port 50051"
+    environment:
+      - AUTH_GRPC_POSTGRES_DSN=$TEST_AUTH_POSTGRES_DSN
+      - AUTH_GRPC_REDIS_DSN=$TEST_AUTH_REDIS_DSN
+      - AUTH_GRPC_TESTING=true
+    labels:
+      service.description: "Auth grpc service"
+      service.label: "auth_service"
+    depends_on:
+      auth_postgres:
+        condition: service_healthy
+      auth_redis:
+        condition: service_healthy
+    volumes:
+      - ../auth_service/grpc/src:/opt/app/src
+
+  auth_postgres:
+    container_name: test_auth_postgres
+    restart: always
+    build:
+      context: ./../auth_service/grpc
+      dockerfile: ./docker/postgres/Dockerfile
+    command: -p ${TEST_AUTH_POSTGRES_PORT}
+    labels:
+      service.description: "Data storage for users in auth service"
+      service.label: "auth_service"
+    volumes:
+      - auth_test_pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${TEST_AUTH_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TEST_AUTH_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${TEST_AUTH_POSTGRES_DB}
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${TEST_AUTH_POSTGRES_USER} -d ${TEST_AUTH_POSTGRES_DB} -p ${TEST_AUTH_POSTGRES_PORT}'" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  auth_redis:
+    container_name: test_auth_redis
+    restart: always
+    build:
+      context: ./..  # use base redis Dockerfile
+      dockerfile: ./docker/redis/Dockerfile
+    command: sh -c "redis-server --save 20 1 --loglevel warning --port ${TEST_AUTH_REDIS_PORT} --user ${TEST_AUTH_REDIS_USER} on '>${TEST_AUTH_REDIS_PASSWORD}' '~*' '&*' '+@all' --requirepass ${TEST_AUTH_REDIS_PASSWORD}"
+    labels:
+      service.description: "Cache for auth service"
+      service.label: "auth_service"
+    volumes:
+      - auth_test_redis_cache:/data
+    expose:
+      - ${TEST_AUTH_REDIS_PORT}
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli", "-p", "$TEST_AUTH_REDIS_PORT", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 1s
+      retries: 10
+
+  tests:
+    container_name: test_auth_functional
+    build:
+      context: ./../auth_service/tests/functional
+      dockerfile: ./docker/Dockerfile
+    command: sh -c "pytest tests/"
+    volumes:
+      - ../auth_service/tests/functional:/opt/app/tests
+    depends_on:
+      - auth_grpc_app
+
+volumes:
+  auth_test_pgdata:
+  auth_test_redis_cache:

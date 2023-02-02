@@ -1,0 +1,6 @@
+cluster.name: elastic-stack-single-node-cluster
+discovery.type: single-node
+network.host: 0.0.0.0
+http.port: 9200
+node.name: "elasticsearch-single-node"
+xpack.security.enabled: false

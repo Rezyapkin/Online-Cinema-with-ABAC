@@ -1,0 +1,8 @@
+version: '3.9'
+services:
+  fastapi_api_app:
+    command: gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --chdir ./src --bind 0.0.0.0:8000 --forwarded-allow-ips="*"
+  auth_grpc_app:
+    command: python3.10 /opt/app/src/main.py --port 50051
+  auth_api_app:
+    command: gunicorn wsgi:app -w 4 --worker-class gevent --chdir ./src --bind 0.0.0.0:5000 --forwarded-allow-ips="*"

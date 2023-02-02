@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+
+  api:
+    container_name: test_api
+    build:
+      context: ./../fastapi_api
+      dockerfile: ./docker/app/Dockerfile
+    image: api-image
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --app-dir ./src --proxy-headers --reload
+    environment:
+      - FASTAPI_API_REDIS_DSN=$TEST_SEARCH_REDIS_DSN
+      - FASTAPI_API_ELASTICSEARCH_DSN=$TEST_SEARCH_ELASTICSEARCH_DSN
+      - FASTAPI_API_TESTING=true
+    volumes:
+      - ../fastapi_api/src:/opt/app/src
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  elasticsearch:
+    container_name: test_elasticsearch
+    restart: always
+    build:
+      context: ./..
+      dockerfile: ./docker/elasticsearch/Dockerfile
+    environment:
+      - 'ES_JAVA_OPTS=-Xms200m -Xmx200m'
+      - 'discovery.type=single-node'
+      - 'xpack.security.enabled=false'
+    healthcheck:
+      test: curl -s http://elasticsearch:$TEST_SEARCH_ELASTICSEARCH_PORT >/dev/null || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - elasticsearch_test_data:/usr/share/elasticsearch/data
+
+  redis:
+    container_name: test_redis
+    restart: always
+    build:
+      context: ./..
+      dockerfile: ./docker/redis/Dockerfile
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli", "-p", "$TEST_SEARCH_REDIS_PORT", "--raw", "incr", "ping" ]
+      interval: 10s
+      timeout: 1s
+      retries: 10
+
+  tests:
+    container_name: test_functional
+    image: api-image
+    command: sh -c "PATH=/opt/app/.local/bin:${PATH}
+      && pip install -r tests/functional/requirements.txt
+      && PYTHONPATH=$$PWD/tests/functional pytest tests/functional/tests/"
+    volumes:
+      - ../fastapi_api/tests:/opt/app/tests
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+
+volumes:
+  redis_test_data:
+  elasticsearch_test_data:
